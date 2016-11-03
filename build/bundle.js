@@ -53,10 +53,12 @@
 
 	const THREE = __webpack_require__(2);
 	__webpack_require__(3)(THREE);
-	__webpack_require__(4)(THREE);
+	__webpack_require__(4);
+	__webpack_require__(5)(THREE);
 	var container;
 	var camera, scene, renderer;
 	var controls;
+	var vrControls;
 	var clock = new THREE.Clock();
 
 	var effect;
@@ -70,17 +72,21 @@
 
 	    scene = new THREE.Scene();
 
-	    var box = new THREE.BoxGeometry(20, 20, 20, 20);
+	    var box = new THREE.BoxGeometry(50, 50, 20, 20);
 	    var material = new THREE.MeshNormalMaterial();
 	    material.color = new THREE.Color(0xff0000);
 	    var boxMesh = new THREE.Mesh(box, material);
 	    scene.add(boxMesh);
 
+
+	    var grid = new THREE.GridHelper(100, 100, new THREE.Color(0xffffff));
+	    scene.add(grid);
+
 	    camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 10000);
 	    camera.position.x = 50;
 	    camera.position.y = 50;
 	    camera.position.z = -100;
-	    camera.lookAt = boxMesh.position;
+	    // camera.lookAt = boxMesh.position;
 	    scene.add( camera );
 
 	    // renderer
@@ -94,6 +100,7 @@
 	    controls.movementSpeed = 100;
 	    controls.lookSpeed = 0.1;
 
+	    vrControls = new THREE.VRControls(camera);
 
 	    container.innerHTML = "";
 	    container.appendChild( renderer.domElement );
@@ -116,7 +123,7 @@
 	    render();
 	}
 	function render() {
-	    // controls.update( clock.getDelta() );
+	    controls.update( clock.getDelta() );
 	    renderer.render(scene, camera);
 	}
 
@@ -42715,6 +42722,186 @@
 
 /***/ },
 /* 4 */
+/***/ function(module, exports) {
+
+	/**
+	 * @author dmarcos / https://github.com/dmarcos
+	 * @author mrdoob / http://mrdoob.com
+	 */
+	module.exports = function(THREE) {
+		THREE.VRControls = function ( object, onError ) {
+
+			var scope = this;
+
+			var vrDisplay, vrDisplays;
+
+			var standingMatrix = new THREE.Matrix4();
+
+			var frameData = null;
+
+			if ( 'VRFrameData' in window ) {
+
+				frameData = new VRFrameData();
+
+			}
+
+			function gotVRDisplays( displays ) {
+
+				vrDisplays = displays;
+
+				if ( displays.length > 0 ) {
+
+					vrDisplay = displays[ 0 ];
+
+				} else {
+
+					if ( onError ) onError( 'VR input not available.' );
+
+				}
+
+			}
+
+			if ( navigator.getVRDisplays ) {
+
+				navigator.getVRDisplays().then( gotVRDisplays ).catch ( function () {
+
+					console.warn( 'THREE.VRControls: Unable to get VR Displays' );
+
+				} );
+
+			}
+
+			// the Rift SDK returns the position in meters
+			// this scale factor allows the user to define how meters
+			// are converted to scene units.
+
+			this.scale = 1;
+
+			// If true will use "standing space" coordinate system where y=0 is the
+			// floor and x=0, z=0 is the center of the room.
+			this.standing = false;
+
+			// Distance from the users eyes to the floor in meters. Used when
+			// standing=true but the VRDisplay doesn't provide stageParameters.
+			this.userHeight = 1.6;
+
+			this.getVRDisplay = function () {
+
+				return vrDisplay;
+
+			};
+
+			this.setVRDisplay = function ( value ) {
+
+				vrDisplay = value;
+
+			};
+
+			this.getVRDisplays = function () {
+
+				console.warn( 'THREE.VRControls: getVRDisplays() is being deprecated.' );
+				return vrDisplays;
+
+			};
+
+			this.getStandingMatrix = function () {
+
+				return standingMatrix;
+
+			};
+
+			this.update = function () {
+
+				if ( vrDisplay ) {
+
+					var pose;
+
+					if ( vrDisplay.getFrameData ) {
+
+						vrDisplay.getFrameData( frameData );
+						pose = frameData.pose;
+
+					} else if ( vrDisplay.getPose ) {
+
+						pose = vrDisplay.getPose();
+
+					}
+
+					if ( pose.orientation !== null ) {
+
+						object.quaternion.fromArray( pose.orientation );
+
+					}
+
+					if ( pose.position !== null ) {
+
+						object.position.fromArray( pose.position );
+
+					} else {
+
+						object.position.set( 0, 0, 0 );
+
+					}
+
+					if ( this.standing ) {
+
+						if ( vrDisplay.stageParameters ) {
+
+							object.updateMatrix();
+
+							standingMatrix.fromArray( vrDisplay.stageParameters.sittingToStandingTransform );
+							object.applyMatrix( standingMatrix );
+
+						} else {
+
+							object.position.setY( object.position.y + this.userHeight );
+
+						}
+
+					}
+
+					object.position.multiplyScalar( scope.scale );
+
+				}
+
+			};
+
+			this.resetPose = function () {
+
+				if ( vrDisplay ) {
+
+					vrDisplay.resetPose();
+
+				}
+
+			};
+
+			this.resetSensor = function () {
+
+				console.warn( 'THREE.VRControls: .resetSensor() is now .resetPose().' );
+				this.resetPose();
+
+			};
+
+			this.zeroSensor = function () {
+
+				console.warn( 'THREE.VRControls: .zeroSensor() is now .resetPose().' );
+				this.resetPose();
+
+			};
+
+			this.dispose = function () {
+
+				vrDisplay = null;
+
+			};
+
+		};
+
+	};
+
+/***/ },
+/* 5 */
 /***/ function(module, exports) {
 
 	/**
