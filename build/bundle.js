@@ -53,7 +53,7 @@
 
 	const THREE = __webpack_require__(2);
 	__webpack_require__(3)(THREE);
-	__webpack_require__(4);
+	__webpack_require__(4)(THREE);
 	__webpack_require__(5)(THREE);
 	var container;
 	var camera, scene, renderer;
@@ -79,13 +79,13 @@
 	    scene.add(boxMesh);
 
 
-	    var grid = new THREE.GridHelper(100, 100, new THREE.Color(0xffffff));
+	    var grid = new THREE.GridHelper(100, 50, new THREE.Color(0xffffff));
 	    scene.add(grid);
 
 	    camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 10000);
-	    camera.position.x = 50;
-	    camera.position.y = 50;
-	    camera.position.z = -100;
+	    camera.position.x = 10;
+	    camera.position.y = 10;
+	    camera.position.z = 100;
 	    // camera.lookAt = boxMesh.position;
 	    scene.add( camera );
 
