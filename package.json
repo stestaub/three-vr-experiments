@@ -11,6 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "three": "^0.82.1",
-    "three-js": "^79.0.0"
+    "three-js": "^79.0.0",
+    "webvr-polyfill": "^0.9.23"
   }
 }
