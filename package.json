@@ -1,0 +1,16 @@
+{
+  "name": "webcam-experiments",
+  "version": "0.0.1",
+  "description": "Experiments using Camera and THREE js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack-dev-server --output-public-path=/build/"
+  },
+  "author": "ste.staub",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.82.1",
+    "three-js": "^79.0.0"
+  }
+}
