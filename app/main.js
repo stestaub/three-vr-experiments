@@ -2,16 +2,17 @@ const THREE = require('../node_modules/three/build/three');
 require('../node_modules/three-first-person-controls')(THREE);
 require('./VRControls')(THREE);
 require('./VREffect')(THREE);
+
+const WebVRManager = require('./webvr-manager');
 var container;
 var camera, scene, renderer;
 var controls;
 var vrControls;
 var clock = new THREE.Clock();
-
+var manager;
 var effect;
 
 init();
-animate();
 
 function init() {
     container = document.createElement('div');
@@ -48,28 +49,58 @@ function init() {
     controls.lookSpeed = 0.1;
 
     vrControls = new THREE.VRControls(camera);
+    vrControls.standing = true;
 
     container.innerHTML = "";
     container.appendChild( renderer.domElement );
 
     window.addEventListener( 'resize', onWindowResize, false );
+    window.addEventListener('vrdisplaypresentchange', onWindowResize, true);
 
-    effect = new THREE.VREffect(renderer, function(error) { console.log(error)})
+    effect = new THREE.VREffect(renderer);
+    effect.setSize(window.innerWidth, window.innerHeight);
 
+    var params = {
+        hideButton: false, // Default: false.
+        isUndistorted: false // Default: false.
+    };
+    manager = new WebVRManager(renderer, effect, params);
+
+    setupStage();
 }
 
 function onWindowResize() {
+    effect.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    controls.handleResize();
 }
 
-function animate() {
-    requestAnimationFrame( animate );
-    render();
+var vrDisplay;
+
+// Get the HMD, and if we're dealing with something that specifies
+// stageParameters, rearrange the scene.
+function setupStage() {
+    navigator.getVRDisplays().then(function(displays) {
+        if (displays.length > 0) {
+            vrDisplay = displays[0];
+            if (vrDisplay.stageParameters) {
+                // setStageDimensions(vrDisplay.stageParameters);
+            }
+            vrDisplay.requestAnimationFrame(animate);
+        }
+    });
 }
-function render() {
-    controls.update( clock.getDelta() );
-    renderer.render(scene, camera);
+
+var lastRender;
+function animate(timestamp) {
+    var delta = Math.min(timestamp - lastRender, 500);
+    lastRender = timestamp;
+
+    vrControls.update();
+    controls.update(delta);
+    // Render the scene through the manager.
+    manager.render(scene, camera, timestamp);
+    effect.render(scene, camera);
+
+    vrDisplay.requestAnimationFrame(animate);
 }
